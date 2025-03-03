@@ -1,14 +1,16 @@
 import { createColumnHelper } from '@tanstack/react-table';
-import { Employee           } from 'Models';
+import { Employee           } from '../Models';
 
-const columnHelper = createColumnHelper<Employee>();
+type ModelType = InstanceType<typeof Employee>;
+type ModelAttributes = ModelType['attributes'];
+const columnHelper = createColumnHelper<ModelAttributes>();
 
 export const EmployeeColumns = [
   columnHelper.accessor(
     'firstName', {
       header:        'Given name',
       enableSorting: true,
-      meta:          { thClasses: 'text-left', searchPlaceholder: 'Search names...' },
+      meta:          { thClasses: 'text-left' },
     }
   ),
   columnHelper.accessor(

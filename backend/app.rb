@@ -69,22 +69,23 @@ class EmployeeResource < ApplicationResource
     eq do |scope, values|
       value = values.shift
       scope = scope.joins(:department)
-      query = scope.where('lower("departments"."name") = ?', value.downcase)
+      query = scope.where('LOWER("departments"."name") = ?', value.downcase)
 
       values.each do | value |
-        query = query.or(scope.where('lower("departments"."name") = ?', value.downcase))
+        query = query.or(scope.where('LOWER("departments"."name") = ?', value.downcase))
       end
 
       query
     end
   end
 
-  # Simple front-end searches always use this name. The quirk is that since
-  # this is intended to be invoked via Spraypaint on the JavaScript side, it is
-  # always going to use "eq" by default - but our semantics here are for a
-  # wildcard search, case insensitive, on first and last name.
+  # The EmployeeFullNameFilter React component uses this. A quirk is that since
+  # this is intended to be invoked via Spraypaint on the JavaScript side as a
+  # generic filter operation, it is always going to use "eq" by default - but
+  # we actually perform a wildcard search, case insensitive, across first and
+  # last name.
   #
-  filter :simple_filter, :string, single: true, only: [:eq] do
+  filter :full_name, :string, single: true, only: [:eq] do
     eq do |scope, value|
       safe_name = ActiveRecord::Base.sanitize_sql_like(value.downcase)
       scope.where("LOWER(first_name || ' ' || last_name) LIKE ?", "%#{safe_name}%")
@@ -107,6 +108,12 @@ class EmployeeDirectoryApp < Sinatra::Application
 
   before do
     content_type :jsonapi
+
+    if ENV['SLEEPY'].present?
+      time = ENV['SLEEPY'].to_f
+      time = 1.0 if time.zero?
+      sleep time
+    end
   end
 
   after do
@@ -140,7 +147,7 @@ class EmployeeDirectoryApp < Sinatra::Application
   private
 
     def list_for(params, include: nil)
-      base            = DEFAULT_PARAMS # See "constants.rb"
+      base            = DEFAULT_PARAMS.deep_dup # See "constants.rb"
       base['include'] = include unless include.nil?
       combined_params = base.merge(params)
 

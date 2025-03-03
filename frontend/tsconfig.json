@@ -20,9 +20,10 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    /** Sprapaint */
-    "strictPropertyInitialization": false,
+    /** Spraypaint */
     "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

@@ -1,48 +1,59 @@
 // Provides a table of Spraypaint-fetched resources via TanStack using table
 // column definitions you provide, with a result that is sortable, paginated,
 // searchable and includes user feedback while waiting for server responses.
-// The search always sends an equals-"search_filter" query off to the server,
-// so resources that are going to be viewed by this list must implement such.
+// Searching is enacted via FilterAbilities and providing an array of zero or
+// more filter components, which are positioned alongside the main title.
 //
 // Column definitions can include meta 'thClasses' to append the given String
 // to the list of HTML classes on TH elements and 'tdClasses' likewise for TD.
 // By default the accessor key is also used as a sort field.
 //
-// The search placeholder is just "Search..." by default but can be overridden
-// with column index 0's 'meta' via a "searchPlaceholder" property - this is
-// ugly but pragmatic!
-//
 // While data is loading, list tables "fade" themselves via opacity, but only
 // after a short delay and with a slow transition to avoid flicker with fast
 // server responses. A spinner is shown for good measure, with a similar delay.
 //
-interface ListProps<C, S> {
-  listColumns:     new () => C; // Column definitions for TanStack's table
-  spraypaintModel: new () => S; // The Spraypaint class used for API calls etc.
+import React, { useState, useEffect } from 'react';
+
+import { ApplicationRecord } from '../Models';
+import { FilterAbilities   } from '../classes/FilterAbilities';
+import { Spinner           } from './Spinner';
+import { Paginator         } from './Paginator';
+
+import {
+  AccessorKeyColumnDef,
+  Header,
+  SortingState,
+
+  useReactTable,
+  getCoreRowModel,
+  flexRender
+} from '@tanstack/react-table';
+
+
+interface ListProps {
+  listColumns:     AccessorKeyColumnDef<any, any>[]; // Column definitions for TanStack's table
+  spraypaintModel: typeof ApplicationRecord;         // The Spraypaint class used for API calls etc.
+  filterAbilities: FilterAbilities;                  // See class for details
 }
 
-import React, { useState, useEffect } from 'react';
-import { useReactTable, getCoreRowModel, flexRender } from '@tanstack/react-table';
-import { useDebounce } from 'use-debounce';
-import { Spinner } from './Spinner';
-import { Paginator } from './Paginator';
-
-export function List<C, S>({ listColumns, spraypaintModel }: ListProps<C, S>) {
+export const List: React.FC<ListProps> = ({
+  listColumns,
+  spraypaintModel,
+  filterAbilities
+}) => {
 
   // ===========================================================================
   // Dynamic state
   // ===========================================================================
 
-  const [data,       setData      ] = useState<S[]            >( [] );
-  const [dataCount,  setDataCount ] = useState<number | null  >( null );
-  const [isLoading,  setIsLoading ] = useState<boolean        >( true );
-  const [error,      setError     ] = useState<string | null  >( null );
+  const [isLoading,  setIsLoading     ] = useState<boolean                   >( true      );
+  const [data,       setData          ] = useState<typeof ApplicationRecord[]>( []        );
+  const [dataCount,  setDataCount     ] = useState<number | undefined        >( undefined );
+  const [error,      setError         ] = useState<string | null             >( null      );
 
-  const [pagination, setPagination] = useState( {pageIndex: 0, pageSize: 10} );
-  const [sorting,    setSorting   ] = useState( [{id: listColumns[0].accessorKey, desc: false}] );
-  const [filtering,  setFiltering ] = useState( {} );
-
-  const [debouncedFiltering] = useDebounce(filtering, 250);
+  const [pagination,    setPagination   ] = useState              ( {pageIndex: 0, pageSize: 10} );
+  const [sorting,       setSorting      ] = useState<SortingState>( [{id: listColumns[0].accessorKey.toString(), desc: false}] );
+  const [filters,       setFilters      ] = useState<any[]       >( [] );
 
   // ===========================================================================
   // Functions
@@ -52,9 +63,9 @@ export function List<C, S>({ listColumns, spraypaintModel }: ListProps<C, S>) {
     try {
       setIsLoading(true);
 
-      const sortField = sorting[0]?.id;
-      const sortOrder = sorting[0]?.desc ? 'desc' : 'asc';
-      const sortOpts  = {};
+      const sortOrder    = sorting[0]?.desc ? 'desc' : 'asc';
+      const sortField    = sorting[0]?.id;
+      const sortOpts:any = {};
 
       sortOpts[sortField] = sortOrder;
 
@@ -64,24 +75,23 @@ export function List<C, S>({ listColumns, spraypaintModel }: ListProps<C, S>) {
         .page(pagination.pageIndex + 1)
         .stats({ total: "count" });
 
-      if (debouncedFiltering) {
-        query = query.where({simple_filter: debouncedFiltering});
-      }
+      filters.map((filterData) => {
+        query = query.where(filterData);
+      });
 
       const response = await query.all();
 
       setIsLoading(false);
       setDataCount(response.meta?.stats?.total?.count);
-      setData(response.data);
+      setData(response.data as []);
 
     } catch (err) {
-
       setError(`Could not fetch information: ${err}`);
       setIsLoading(false);
     }
   };
 
-  const getSortClass = (header: Header<TData>) => {
+  const getSortClass = (header: Header<any, any>) => {
     const sortType = header.column.getIsSorted();
 
     if (sortType === false) {
@@ -93,10 +103,23 @@ export function List<C, S>({ listColumns, spraypaintModel }: ListProps<C, S>) {
     }
   };
 
+  const filtersDidChange = (index: number, filterData: any) => {
+    const newFilters = [...filters];
+    newFilters[index] = filterData;
+    setFilters(newFilters);
+
+    const newPagination = {pageIndex: 0, pageSize: pagination.pageSize};
+    setPagination(newPagination);
+  };
+
   // ===========================================================================
   // Initialisation
   // ===========================================================================
 
+  // TanStack's documentation and internal commentary are wrong due to a bug in
+  // PaginationOptions, which fails to declare the "pageSize" property leading
+  // to TypeScript compilation failure. It defaults to 10, so we live with it.
+  //
   const table = useReactTable({
     data:                 data,
     columns:              listColumns,
@@ -105,25 +128,23 @@ export function List<C, S>({ listColumns, spraypaintModel }: ListProps<C, S>) {
     manualPagination:     true,
     onPaginationChange:   setPagination,
     rowCount:             dataCount,
-    pageSize:             10,
+    // pageSize: ...,
 
     manualSorting:        true,
     enableSortingRemoval: false,
     onSortingChange:      setSorting,
 
     manualFiltering:      true,
-    onGlobalFilterChange: setFiltering,
 
     state: {
-      pagination:      pagination,
-      sorting:         sorting,
-      globalFiltering: filtering
+      pagination: pagination,
+      sorting:    sorting
     },
   });
 
   useEffect(() => {
     fetchItems();
-  }, [pagination, sorting, debouncedFiltering]);
+  }, [pagination, sorting, filters]);
 
   // ===========================================================================
   // Rendering
@@ -139,17 +160,20 @@ export function List<C, S>({ listColumns, spraypaintModel }: ListProps<C, S>) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-baseline">
-        <h1 className="capitalize">
+      <div className="list-title-and-filters mb-6 flex flex-wrap gap-4 items-center">
+        <h1 className="capitalize grow">
           {spraypaintModel.jsonapiType}
         </h1>
-        <div className="ms-0 sm:ms-auto flex flex-row-reverse sm:flex-row gap-4 items-center">
-          <Spinner active={isLoading} delayedShow={true} />
-          <input
-            className="text-md px-2 py-1"
-            onChange={event => table.setGlobalFilter(String(event.target.value))}
-            placeholder={listColumns[0].meta?.searchPlaceholder || 'Search...'}
-          />
+
+        <Spinner active={isLoading} delayedShow={true} />
+
+        <div className="flex flex-row flex-wrap gap-4 items-center">
+          {filterAbilities.filterComponents?.map((Component, index) => (
+            <Component
+              key={index}
+              onChange={function(filterData: any) { filtersDidChange(index, filterData) }}
+            />
+          ))}
         </div>
       </div>
 

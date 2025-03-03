@@ -17,12 +17,12 @@ interface SpinnerProps {
   delayedShow: boolean; // True -> auto-delay visibility by 300ms, else make visible instantly
 }
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 
 export const Spinner: React.FC<SpinnerProps> = ({ active, delayedShow }) => {
-  const wrapperStyle = active ? {visibility: 'visible'} : {visibility: 'hidden'};
+  const wrapperStyle: React.CSSProperties = active ? {visibility: 'visible'} : {visibility: 'hidden'};
   const wrapperClass = active ? (
-    `spinner-active {delayedShow ? 'transition delay-300 duration-500 opacity-100' : ''}`
+    `spinner-active ${delayedShow ? 'transition delay-300 duration-500 opacity-100' : ''}`
   ) : (
     'spinner-inactive opacity-0'
   );
@@ -33,7 +33,7 @@ export const Spinner: React.FC<SpinnerProps> = ({ active, delayedShow }) => {
       className={`spinner ${wrapperClass} inline-flex cursor-not-allowed items-center rounded-md transition`}
     >
       <svg
-        className="mr-3 -ml-1 size-7 animate-spin text-blue-500"
+        className="size-7 animate-spin text-blue-500"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

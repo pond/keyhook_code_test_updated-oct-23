@@ -10,6 +10,10 @@ h1 {
   @apply text-5xl font-extrabold text-blue-600
 }
 
+select {
+  @apply h-10;
+}
+
 .list-table {
   @apply w-full bg-white shadow-md rounded-lg overflow-hidden;
 }
@@ -70,9 +74,18 @@ nav.pagination button:last-child {
 }
 
 nav.pagination select {
-  @apply w-20 h-10;
+  @apply w-20;
 }
 
 nav.pagination span {
   @apply flex items-center font-bold;
+}
+
+/* See notes in TextFilter about matching up styles to the React TailwindCSS
+ * Select component, in conjunction with the styles applied here. These are
+ * clearly vulnerable to changes in document structure that might occur with
+ * updates of that particular NPM package.
+ */
+.react-tailwindcss-select-container div[aria-expanded] > div:first-child {
+  @apply text-base text-gray-400;
 }

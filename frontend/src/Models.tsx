@@ -1,8 +1,8 @@
 // Spraypaint's internals seem to be written in such a way that all models must
 // be defined in a single big file - splitting them up doesn't work, leading to
 // errors such as 'Unknown type "departments"' when Employee tries to declare
-// its relationship to Department (even if the Department constant is imported
-// into that module).
+// its relationship to Department (even if Department is imported into that
+// module).
 
 import { SpraypaintBase, Model, Attr, HasMany, BelongsTo } from 'spraypaint';
 
@@ -12,12 +12,14 @@ export class ApplicationRecord extends SpraypaintBase {
   static apiNamespace = '/api/v1';
 }
 
+// const CastApplicationRecord = ApplicationRecord as typeof SpraypaintBase;
+// export { CastApplicationRecord as ApplicationRecord };
+//
 @Model()
 export class Department extends ApplicationRecord {
   static jsonapiType  = 'departments';
   static singularName = 'department';
 
-  @Attr() id:   number;
   @Attr() name: string;
 
   @HasMany() employees: Employee[];
@@ -28,7 +30,6 @@ export class Employee extends ApplicationRecord {
   static jsonapiType  = 'employees';
   static singularName = 'employee';
 
-  @Attr() id:        number;
   @Attr() firstName: string;
   @Attr() lastName:  string;
   @Attr() position:  string;
