@@ -8,5 +8,6 @@ gem 'rack-cors', require: 'rack/cors'
 gem 'puma'
 gem 'rackup'
 gem 'sinatra'
+gem 'debug'
 
 gem 'sqlite3'

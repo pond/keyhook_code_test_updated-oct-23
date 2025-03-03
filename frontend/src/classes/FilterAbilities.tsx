@@ -1,12 +1,15 @@
-// Used by e.g. the List component to declare supported filter abilities.
-// Present mostly to ensure type-safety. Initialise with an array of React
-// components that all conform to the FilterProps interface. For an example
-// of a producer, see App.tsx; and for a consumer, the List component.
+// Used by e.g. the List component to render filters appropriate for the
+// entity being listed. Present mostly to help with type-safety.
+//
+// Initialise with an array of React components that all conform to the
+// CommonFilterProps interface.
+//
+// For an example, see App.tsx.
 //
 import React from 'react';
 
 export class FilterAbilities {
   constructor(
-    public filterComponents: React.ComponentType<any>[] | null = null
+    public filterComponents: React.ComponentType<any>[] = []
   ) {}
 }

@@ -10,9 +10,9 @@
 // the server side.
 //
 // IMPORTANT: This does not have to be used directly and, often, you'll want to
-//            use a specialisation of this component which conforms to the
-//            FilterProps interface for a more targeted search. For example,
-//            see EmployeeFullNameFilter.
+//            use version of this component wrapped in another which conforms
+//            to the CommonFilterProps interface for a specific kind of search.
+//            For example, see EmployeeFullNameFilter.
 //
 import React, { useState, useEffect } from 'react';
 import { useDebounce } from 'use-debounce';
@@ -43,7 +43,7 @@ export const TextFilter: React.FC<TextFilterProps> = ({ filterField, placeholder
   //
   return (
     <input
-      className="text-base px-3 py-[10px] leading-[20px] border border-gray-300 transition-all duration-300 hover:border-gray-400 rounded shadow-sm"
+      className="standard-input"
       onChange={event => setSearchString(String(event.target.value))}
       placeholder={placeholder || 'Search...'}
     />

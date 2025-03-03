@@ -5,6 +5,7 @@ require 'kaminari'
 require 'sinatra/base'
 require 'graphiti'
 require 'graphiti/adapters/active_record'
+require 'debug'
 
 require_relative 'constants'
 
@@ -125,19 +126,50 @@ class EmployeeDirectoryApp < Sinatra::Application
     departments.to_jsonapi
   end
 
-  get '/api/v1/departments/:id' do
-    department = DepartmentResource.find(find_with(params))
-    department.to_jsonapi
-  end
+  # For possible future use...
+  #
+  # get '/api/v1/departments/:id' do
+  #   department = DepartmentResource.find(find_with(params))
+  #   department.to_jsonapi
+  # end
 
   get '/api/v1/employees' do
     employees = EmployeeResource.all(list_for(params, include: 'department'))
     employees.to_jsonapi
   end
 
-  get '/api/v1/employees/:id' do
-    employee = EmployeeResource.find(find_with(params, include: 'department'))
-    employee.to_jsonapi
+  # For possible future use...
+  #
+  # get '/api/v1/employees/:id' do
+  #   employee = EmployeeResource.find(find_with(params, include: 'department'))
+  #   employee.to_jsonapi
+  # end
+
+  # No Rails safe-params here! We'll assign anything. I'd *never* do this in
+  # Production code. Implemented largely "the hard way" - Graphiti has no
+  # coherent documentation on this that I can find, with online examples of
+  # Graphiti using Rails and e.g. "render jsonapi_errors: employee" is of no
+  # use here.
+  #
+  # It took a lot of debugging with the difficult-to-drive resource proxy
+  # implementation to realise that Graphiti assumes HashWithIndifferentAccess
+  # and *does not* work out-of-box with a String-keyed params bundle. Juggling
+  # debugging between this and the Spraypaint side is a chore, but the end
+  # result - when both sides are properly written - is nice and terse, except
+  # for error handling (which I suspect can be done a better way if you know
+  # Graphiti well enough).
+  #
+  post '/api/v1/employees' do
+    payload = JSON.parse(request.body.read)
+    payload.deep_symbolize_keys!
+
+    employee = EmployeeResource.build(payload)
+
+    if employee.save
+      employee.to_jsonapi
+    else
+      [422, jsonapi_errors(employee).to_json]
+    end
   end
 
   # ============================================================================
@@ -146,6 +178,15 @@ class EmployeeDirectoryApp < Sinatra::Application
   #
   private
 
+    # Takes a params bundle (from the query string only, in Sinatra) for a GET
+    # request intended to list resources. Optionally add an "include" parameter
+    # for Graphiti, along with merging DEFAULT_PARAMS and imposing a limit via
+    # MAX_PAGE_SIZE constraint.
+    #
+    # URI params will override everything except the page size constraint.
+    #
+    # Returns the result, intended for use in "Resource.all(...)".
+    #
     def list_for(params, include: nil)
       base            = DEFAULT_PARAMS.deep_dup # See "constants.rb"
       base['include'] = include unless include.nil?
@@ -159,6 +200,9 @@ class EmployeeDirectoryApp < Sinatra::Application
       combined_params
     end
 
+    # Single-instance analogue of #list_for, intended for use in
+    # "Resource.find(...)".
+    #
     def find_with(params, include: nil)
       base            = {}
       base['include'] = include unless include.nil?
@@ -167,4 +211,34 @@ class EmployeeDirectoryApp < Sinatra::Application
       combined_params
     end
 
+    # Returns a Hash of JSONAPI-compliant error data for the given
+    # ActiveRecord model instance that holds validation errors. Return as a
+    # response via e.g. "[422, errors_hash.to_json]".
+    #
+    def jsonapi_errors(model)
+      errors = model.errors.map do |error|
+        js_field = error.attribute.to_s.camelize.downcase_first
+
+        {
+          code:   'unprocessable_entity',
+          status: '422',
+          title:  'Validation Error',
+          detail: error.full_message,
+          source: { pointer: "/data/attributes/#{js_field}" },
+          meta: {
+
+            # Ruby-esque name; can't tell from docs the expectation, since the
+            # example uses "title" which is unhelpful. Given other parts of the
+            # meta bundle seem relevant to ActiveRecord concepts so it makes
+            # sense that the attribute would *not* use the JS-style name.
+            #
+            attribute: error.attribute,
+            message: error.message,
+            code: error.type
+          }
+        }
+      end
+
+      return { errors: errors }
+    end
 end

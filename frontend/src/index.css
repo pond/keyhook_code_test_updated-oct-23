@@ -10,6 +10,10 @@ h1 {
   @apply text-5xl font-extrabold text-blue-600
 }
 
+h2 {
+  @apply text-3xl font-bold text-blue-600
+}
+
 select {
   @apply h-10;
 }
@@ -57,19 +61,19 @@ nav.pagination > * {
   @apply mt-5;
 }
 
-nav.pagination button {
+nav.pagination button.page-navigation {
   @apply px-3 h-10 text-gray-500 bg-white border border-e-0 border-gray-300 hover:bg-gray-100 hover:text-gray-700;
 }
 
-nav.pagination button:disabled {
+nav.pagination button.page-navigation:disabled {
   @apply opacity-50 hover:bg-white hover:text-gray-500;
 }
 
-nav.pagination button:first-child {
+nav.pagination button.page-navigation:first-child {
   @apply rounded-s-lg;
 }
 
-nav.pagination button:last-child {
+nav.pagination button.page-navigation:last-child {
   @apply border-e rounded-e-lg;
 }
 
@@ -78,7 +82,7 @@ nav.pagination select {
 }
 
 nav.pagination span {
-  @apply flex items-center font-bold;
+  @apply flex items-center justify-center font-bold mr-0 sm:mr-auto;
 }
 
 /* See notes in TextFilter about matching up styles to the React TailwindCSS
@@ -88,4 +92,36 @@ nav.pagination span {
  */
 .react-tailwindcss-select-container div[aria-expanded] > div:first-child {
   @apply text-base text-gray-400;
+}
+
+button.standard-button {
+  @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
+}
+
+button[type="submit"].standard-button {
+  @apply bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded;
+}
+
+label.standard-label {
+  @apply block text-gray-700 text-sm font-bold mb-2;
+}
+
+input.standard-input {
+  @apply appearance-none text-base px-3 py-[10px] leading-[20px] border border-gray-300 transition-all duration-300 hover:border-gray-400 rounded shadow-sm;
+}
+
+input.standard-input[type='number'] {
+  @apply w-full;
+}
+
+select.standard-select {
+  @apply h-10;
+}
+
+div.standard-input-group {
+  @apply mb-5;
+}
+
+div.standard-input-group:last-child {
+  @apply mb-0;
 }

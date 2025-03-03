@@ -1,12 +1,17 @@
 // Provides a table of Spraypaint-fetched resources via TanStack using table
 // column definitions you provide, with a result that is sortable, paginated,
 // searchable and includes user feedback while waiting for server responses.
-// Searching is enacted via FilterAbilities and providing an array of zero or
-// more filter components, which are positioned alongside the main title.
 //
 // Column definitions can include meta 'thClasses' to append the given String
 // to the list of HTML classes on TH elements and 'tdClasses' likewise for TD.
 // By default the accessor key is also used as a sort field.
+//
+// Searching is enabled via optional property 'filterAbilities' and providing
+// an array of one or more filter components, which are positioned alongside
+// the main title.
+//
+// Buttons can be added in the navigation area (hanging to the right in wide
+// viewports, else underneath) via the optional 'buttonCollection' property.
 //
 // While data is loading, list tables "fade" themselves via opacity, but only
 // after a short delay and with a slow transition to avoid flicker with fast
@@ -16,6 +21,7 @@ import React, { useState, useEffect } from 'react';
 
 import { ApplicationRecord } from '../Models';
 import { FilterAbilities   } from '../classes/FilterAbilities';
+import { ButtonCollection  } from '../classes/ButtonCollection';
 import { Spinner           } from './Spinner';
 import { Paginator         } from './Paginator';
 
@@ -31,29 +37,31 @@ import {
 
 
 interface ListProps {
-  listColumns:     AccessorKeyColumnDef<any, any>[]; // Column definitions for TanStack's table
-  spraypaintModel: typeof ApplicationRecord;         // The Spraypaint class used for API calls etc.
-  filterAbilities: FilterAbilities;                  // See class for details
+  listColumns:       AccessorKeyColumnDef<any, any>[]; // Column definitions for TanStack's table
+  spraypaintModel:   typeof ApplicationRecord;         // The Spraypaint class used for API calls etc.
+  filterAbilities?:  FilterAbilities;                  // See FilterAbilities for details
+  buttonCollection?: ButtonCollection;                 // See ButtonCollection for details
 }
 
-export const List: React.FC<ListProps> = ({
+export const List: React.FunctionComponent<ListProps> = ({
   listColumns,
   spraypaintModel,
-  filterAbilities
+  filterAbilities,
+  buttonCollection,
 }) => {
 
   // ===========================================================================
   // Dynamic state
   // ===========================================================================
 
-  const [isLoading,  setIsLoading     ] = useState<boolean                   >( true      );
-  const [data,       setData          ] = useState<typeof ApplicationRecord[]>( []        );
-  const [dataCount,  setDataCount     ] = useState<number | undefined        >( undefined );
-  const [error,      setError         ] = useState<string | null             >( null      );
+  const [isLoading, setIsLoading ] = useState<boolean                   >( true      );
+  const [data,      setData      ] = useState<typeof ApplicationRecord[]>( []        );
+  const [dataCount, setDataCount ] = useState<number | undefined        >( undefined );
+  const [error,     setError     ] = useState<string | null             >( null      );
 
-  const [pagination,    setPagination   ] = useState              ( {pageIndex: 0, pageSize: 10} );
-  const [sorting,       setSorting      ] = useState<SortingState>( [{id: listColumns[0].accessorKey.toString(), desc: false}] );
-  const [filters,       setFilters      ] = useState<any[]       >( [] );
+  const [pagination, setPagination] = useState              ( {pageIndex: 0, pageSize: 10} );
+  const [sorting,    setSorting   ] = useState<SortingState>( [{id: listColumns[0].accessorKey.toString(), desc: false}] );
+  const [filters,    setFilters   ] = useState<any[]       >( [] );
 
   // ===========================================================================
   // Functions
@@ -168,8 +176,8 @@ export const List: React.FC<ListProps> = ({
         <Spinner active={isLoading} delayedShow={true} />
 
         <div className="flex flex-row flex-wrap gap-4 items-center">
-          {filterAbilities.filterComponents?.map((Component, index) => (
-            <Component
+          {filterAbilities?.filterComponents.map((FilterComponent, index) => (
+            <FilterComponent
               key={index}
               onChange={function(filterData: any) { filtersDidChange(index, filterData) }}
             />
@@ -209,7 +217,16 @@ export const List: React.FC<ListProps> = ({
         </tbody>
       </table>
 
-      <Paginator table={table} />
+      <Paginator table={table}>
+        <div>
+          {buttonCollection?.buttonComponents.map((ButtonComponent, index) => (
+            <ButtonComponent
+              key={index}
+              onClose={fetchItems}
+            />
+          ))}
+        </div>
+      </Paginator>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { createColumnHelper } from '@tanstack/react-table';
 import { Employee           } from '../Models';
 
-type ModelType = InstanceType<typeof Employee>;
-type ModelAttributes = ModelType['attributes'];
-const columnHelper = createColumnHelper<ModelAttributes>();
+type  EmployeeType       = InstanceType<typeof Employee>;
+type  EmployeeAttributes = EmployeeType['attributes'];
+const columnHelper       = createColumnHelper<EmployeeAttributes>();
 
 export const EmployeeColumns = [
   columnHelper.accessor(
@@ -23,7 +23,7 @@ export const EmployeeColumns = [
     },
   ),
   columnHelper.accessor(
-    'department.name', // This leads to sort key departmemt_name as-is, which our API understands
+    'department.name', // This leads to sort key department_name as-is, which our API understands
     {
       header:        'Department',
       enableSorting: true,

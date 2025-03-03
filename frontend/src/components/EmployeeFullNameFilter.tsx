@@ -1,13 +1,14 @@
 // A specialisation of TextFilter designed for the 'employees' endpoint which
 // filters by full name.
 //
-// Conforms to the FilterProps interface, so usable via FilterAbilities.
+// Conforms to the CommonFilterProps interface, so usable via FilterAbilities.
 //
 import React from 'react';
-import { FilterProps } from './FilterProps';
-import { TextFilter } from './TextFilter';
 
-export const EmployeeFullNameFilter: React.FC<FilterProps> = ({ onChange }) => {
+import { CommonFilterProps } from '../interfaces/CommonFilterProps';
+import { TextFilter        } from './TextFilter';
+
+export const EmployeeFullNameFilter: React.FC<CommonFilterProps> = ({ onChange }) => {
   return (
     <TextFilter
       filterField="fullName"
