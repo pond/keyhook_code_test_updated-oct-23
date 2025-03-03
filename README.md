@@ -1,94 +1,52 @@
 ## Keyhook Interview Task
-
 ### Overview
 
-Our stack comprises of a rails backend using Graphiti to power our API. And a separate ReactJS app that powers our web and mobile apps ( we use CapacitorJS for our mobile app ).
+* Implements main task and both bonus tasks (with caveats for employee creation, see below).
+* Much of the implementation approaches production-ready _except_ for no tests at all to save time (I'd use RSpec & learn Jest unless other test frameworks were in use in a 'real' code base).
+* Employee addition is not production-ready. It lacks a disable-with-activity indicator on the 'Add' button; successful addition is only indicated by self-closing and reloading the list. A notification / Rails flash-like system would be needed. There is only very crude validation and error handling (for server-side validation errors in particular) - in view of time already spent prior, I just used HTML 5 browser-implemented validation.
 
-We have prepared this small test as a way of checking how you can tackle some of the more day to day tasks we face when building out platform. This is a heavily slimmed down and simplified version of a part of our app.
+### Feature notes
 
-### Task
+* Responsive design everywhere, though the mobile view of the employees list's table header is a bit rough. I spent more time on this than is wise (devil's in the detail of how e.g. the department filter, spinner and text search all behave), but it was a solid way to get to grips with Tailwind.
+* Crude but functional API response error handling everywhere, including the Departments menu.
+* Carefully-considered slow response activity indicators. From step 4 (see commit notes below) onwards, you can start the Sinatra server with `SLEEPY=<float> bundle exec rackup -p 4567` to introduce a sleep of `<float>` seconds in all responses. Try `1.0` to get a good look at fades and spinners, `0.5` to get a feel for faster response behaviour and remove `SLEEPY=...` for fast responses, noting no spinner or fade flicker arising.
+* Sorting employees by department name was not requested but is implemented, since it was ugly being able to sort on everything _except_ that column!
+* Department filtering is done as a multi-select, since it was very little effort to add and is nice-to-have for users.
 
-We have provided you with a simple Sinatra.rb backend API that uses Graphiti. It holds 2 data models, Employees and Departments.
-The backend will seed itself with data the first time you run it.
+### Paths not taken
 
-Please note that if you are using a Windows machine, you may run into issues with the sqlite3 gem.
-We recommend either using a Mac or Linux machine to complete the test. Or spinning up an Linux VM ( such as ubuntu ) on your PC.
-You may also consider using a docker container to run the backend if you have experience with docker.
+Sinatra could be configured to report things like exceptions as a JSON API payload but that seemed like overkill for the task at hand so I did not implement it - invalid JSON complaints will arise on the JavaScript side.
 
-To run the backend:
+There is a handful of TODO notes in the code here and there which should be self-explanatory.
 
-```bash
-bundle install
-bundle exec rackup -p 4567
-```
+I found [this note](https://react-typescript-cheatsheet.netlify.app/docs/basic/getting-started/function_components/#:~:text=Why%20is%20React.fc%20not%20needed) in React documentation when I realised `React.FunctionComponent` existed and wanted to know why there was that and `React.FC` available. This seems to indicate that both can be removed from modern code bases, but the wording is a little confusing - it seems to go on to discuss _advantages_ of using those calls just after saying they can be removed, so on balance I stuck with `React.FC`.
 
-The frontend folder has a Typescript+React app ready to go, it is using vite for bundling / running the app.
-To run just:
+### Commit notes
 
-```
-yarn install
-yarn dev
-```
+This is committed as five steps - base project, then four significant stepping stones described below. I was new to just about everything here except the Ruby language and ActiveRecord. In particular, it took me a while to realise that TypeScript checking was not being run by default and I had to execute `yarn build` for that resulting in embarrassing mistakes in the first couple of steps - which are present warts-and-all in the repository. The older code will make "interesting" reading, I'm sure.
 
-The React app should be a single page ( no routing needed ), that satisfies the following criteria.
+The end-to-end diff [looks like this](https://github.com/pond/keyhook_code_test_updated-oct-23/compare/398c953...2c1bef4?w=1).
 
-- Uses the Tanstack table library to show a list of employees from the API.
-  - The table should show these columns:
-    - First Name
-    - Last Name
-    - Age
-    - Position
-    - Department Name
-- You can use the Spraypaint.js library or another JSONAPI library if you'd like.
-- The table should have some basic styling applied with tailwind css.
-- Table data should be paginated.
-- Sorting should be enabled on the first_name,last_name, age, position columns.
-- Add a search bar that allows typing in a name and filters the records by a custom graphiti name filter.
-  - This filter should search across both the first_name and last_name columns.
-- You will need to add the graphiti resource for Employees.
+Stepwise, each includes a lot of internal tidying and sometimes code style switch-ups as I rapidly start to find my footing with the technologies at hand and some of what appear to be prevailing idioms:
 
-All sorting,paginating and filtering should happen through the server side query and should not be done on the frontend.
+1. Base project.
+2. [Learning React / Tailwind / Sinatra / Graphiti / Spraypaint](https://github.com/pond/keyhook_code_test_updated-oct-23/commit/bc235c5cc6454516b1e15934e437c824c1aa73c4?w=1): Lists employees in a table, but does so without Tanstack. JavaScript works, but TypeScript has many errors.
+3. [Learning Tanstack / More React](https://github.com/pond/keyhook_code_test_updated-oct-23/commit/d456ec4afc12021cbc16d1b60e61ad0d3d3343c9?w=1): Tanstack table, pagination, full name text search (**adds [`use-debounce`](https://www.npmjs.com/package/use-debounce)**) JavaScript works, but TypeScript has many errors.
+4. [Learning TypeScript](https://github.com/pond/keyhook_code_test_updated-oct-23/commit/2bfa2980afcf2f3a48b6df41c23e83aa55595392?w=1): `yarn build` succeeds. Adds filter-by-department (**adds [`react-tailwindcss-select`](https://www.npmjs.com/package/react-tailwindcss-select)** for multi-select styling and what later proved to be very helpful decoupling of internal selected item state and the DOM, but it does not play nicely with keyboard navigation sadly).
+5. [Learning Spraypaint / Graphiti-outside-Rails resource creation](https://github.com/pond/keyhook_code_test_updated-oct-23/commit/2c1bef45bd5f8d000d67264f36545e01a6171d64?w=1): More composition, type fixes, better internal API, recognise value of `react-tailwindcss-select`'s decoupled model since Spraypaint requires me to assign a Department resource to the Employee; it will sadly not let me just set `departmentId`. I can retain the Department array fetched for the select list and store the selected Department resource instance thanks to the decoupled state.
 
-Our app is entirely built on React hooks, so please be sure to use hooks and functional components instead of class components.
+### Implementation notes
 
-You are free to use any other packages you would like to use to build the frontend.
-You are free to use any documentation or google anything you might not know.
+I aimed for component reuse in the implementation. I imagined questions like, "now, how would you add a list of departments?" when building the reusable List with its optional stack of filters (I'd add a `DepartmentNameFilter` component and specify that in the filter abilities). Further, what about a nested list of employees scoped by department, instead of or as an alternative to using the filter menu? Well, in that case we have - in Rails terms - a route along the lines of `.../departments/<department_id>/employees` and the button components array becomes useful. The "add employee" button would still be there but, potentially, we might also choose to offer an "edit department" button based on `<department_id>` for user convenience.
 
-### Bonus
+As a result, there are more components than might be expected. The approach is mostly based around composition, as I wasn't confident in how (or if) I should use subclassing with React components. The purpose of `frontend/src/interfaces` is an attempt to enforce compliance to certain interfaces for something that can be used in a certain reuse context (whereas with subclassing, we'd just say "type must be subclass of foo") - this has a loose analogy to Objective C protocols. I strongly suspect this demonstrates clearly my inexperience with React, but if I were in a real code base, I'd have a lot of other code to use as a reference instead of "rolling my own".
 
-What if we wanted to filter our table to only show employees in a certain Department? We could flip the query around and query for the certain Department and then load in the employees for that department.
+### Time spent
 
-Or we could split the query into 2 queries, first querying for the department and then use the department id to filter the employees.
+Due to the recent shoulder surgery and arising lack of sleep I could only work in short bursts. Even so I took longer on this than I hoped.
 
-However both of these options have drawbacks. Instead we'd like to just be able to filter the Employee Resource by the department name.
-
-Can you add a select box with the list of department names. When a department name is selected, it should filter the employees by that department name ( not department id ).
-
-Note that you will need to add in code into the Graphiti resource to make this work as well.
-
-### Bonus 2
-
-Add a button into the frontend that shows a form ( you can choose how to present this, a modal might be a good idea ).
-The form should allow you to add a new employee to the database, and then show the new employee in the table.
-Add any validations to the backend that you think would be appropriate.
-Add a validation to the backend to check that an employee does with the same name does not already exist in that department. ( I know multiple people can have the same name, but this is just for testing purposes).
-
-### Things we will evaluate
-
-- Has the criteria been met.
-- What packages were used and how were they used.
-- Are queries optimised? ( No n+1 queries or useEffects firing sporadically)
-- Code style and commenting.
-- Use of Typescript types.
-- Can you discuss, rationalise and explain choices you have made.
-
-### Links
-
-- [Graphiti](https://www.graphiti.dev/)
-- [Spraypaint.js](https://www.graphiti.dev/js)
-- [Tanstack Table](https://tanstack.com/table/v7)
-- [Tailwind.css](https://tailwindcss.com/)
-
-### Contact
-
-If you have any questions or if anything needs clarifying, please contact me at aaron.rama@keyhook.com
+* Thu Feb 27 - 3 hours
+* Fri Feb 28 - 6 hours
+* Sat Mar 1 - 9 hours
+* Sun Mar 2 - 7 hours
+* Mon Mar 3 - 4 hours (mostly just documentation, re-testing, cleanup, GitHub).
