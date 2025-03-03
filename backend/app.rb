@@ -38,6 +38,14 @@ class EmployeeResource < ApplicationResource
   attribute :position,      :string
   attribute :department_id, :integer, only: [:filterable]
 
+  # It's easiest to provide API support for sorting by department name directly
+  # here and take the server-side step of a secondary sort on last name, to
+  # keep client-side definitions simplified.
+  #
+  sort :department_name, :string do |scope, value|
+    scope.joins(:department).order("departments.name #{value}, last_name asc")
+  end
+
   # With Graphiti, if you try to get only employees in a named department thus:
   #
   #   GET .../employees?include=department&filter[department.name]=Foo
@@ -57,7 +65,7 @@ class EmployeeResource < ApplicationResource
   # will return only employees matching the department name(s) in full (no
   # wildcards), but case-insensitive.
   #
-  filter :department_name, :string do
+  filter :department_name, :string, only: [:eq] do
     eq do |scope, values|
       value = values.shift
       scope = scope.joins(:department)
@@ -68,6 +76,18 @@ class EmployeeResource < ApplicationResource
       end
 
       query
+    end
+  end
+
+  # Simple front-end searches always use this name. The quirk is that since
+  # this is intended to be invoked via Spraypaint on the JavaScript side, it is
+  # always going to use "eq" by default - but our semantics here are for a
+  # wildcard search, case insensitive, on first and last name.
+  #
+  filter :simple_filter, :string, single: true, only: [:eq] do
+    eq do |scope, value|
+      safe_name = ActiveRecord::Base.sanitize_sql_like(value.downcase)
+      scope.where("LOWER(first_name || ' ' || last_name) LIKE ?", "%#{safe_name}%")
     end
   end
 end

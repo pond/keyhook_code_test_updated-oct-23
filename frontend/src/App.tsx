@@ -1,13 +1,12 @@
 import React from 'react';
 
-import { Department, Employee } from './Models';
-import { List                 } from './components/List';
-import { ListItemEmployee     } from './components/ListItemEmployee';
-import { ListHeaderEmployee   } from './components/ListHeaderEmployee';
+import { Employee        } from './Models';
+import { EmployeeColumns } from './columns/EmployeeColumns';
+import { List            } from './components/List';
 
 const App: React.FC = () => {
   return (
-    <List ListItem={ListItemEmployee} HeaderItem={ListHeaderEmployee} SpraypaintModel={Employee} />
+    <List listColumns={EmployeeColumns} spraypaintModel={Employee} />
   );
 }
 
