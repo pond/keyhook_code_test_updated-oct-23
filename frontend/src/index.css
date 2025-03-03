@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+body {
+  background: #eee;
+}
+
+.list-table {
+  @apply w-full bg-white shadow-md rounded-lg overflow-hidden;
+}
+
+thead .list-tr {
+  @apply flex flex-col mb-4 sm:table-row border-b bg-sky-50;
+}
+
+tbody .list-tr {
+  @apply flex flex-col mb-4 sm:table-row border-b last:border-b-0 hover:bg-gray-50;
+}
+
+.list-td {
+  @apply p-3;
+}
+
+.list-th {
+  @apply px-3 py-5;
+}

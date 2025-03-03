@@ -1,10 +1,14 @@
+import React from 'react';
 
-const App = () => {
+import { Department, Employee } from './Models';
+import { List                 } from './components/List';
+import { ListItemEmployee     } from './components/ListItemEmployee';
+import { ListHeaderEmployee   } from './components/ListHeaderEmployee';
+
+const App: React.FC = () => {
   return (
-    <>
-      <h1 className="text-2xl font-bold underline">Keyhook Test Project</h1>
-    </>
-  )
+    <List ListItem={ListItemEmployee} HeaderItem={ListHeaderEmployee} SpraypaintModel={Employee} />
+  );
 }
 
 export default App
